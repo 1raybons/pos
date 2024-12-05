@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Tagger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-image: url(pos.jpg);
+            font-family: Arial, sans-serif;
+            background-size: cover;
+            background-position: center;
+            color: black;
+        }
+        h1 {
+            color: #333;
+        }
+        ul{
+        
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+   <marquee> <h1 style="color:red">POS Group Assignment</h1></marquee>
+    <ol>
+        <h4 style="color: blue;">Members</h4>
+        <li>Lucy Ndanu: AS13/00009/21</li>
+        <li>Ruth Mutindi: AS15/00430/21</li>
+        <li>Caroline Syombua: AS15/00500/21</li>
+        <li>Mercy Mbithe: AS15/00473/21</li>
+        <li> Chipanga Daniel: AS15/00002/21</li>
+        <li>Baroness Mutheu: AS13/00202/21</li>
+        <li>Redemter Lucy: AS13/00135/21</li>
+        <li>Peter Kiilu: AS15/00195/19</li>
+    </ol>
+    <textarea id="inputText" placeholder="Enter your sentences here...eg (wamuka kioko ata?)"></textarea><br>
+    <button onclick="analyzeText()">Analyze</button>
+
+    <table id="resultTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Word</th>
+                <th>Part of Speech</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody">
+        </tbody>
+    </table>
+
+    <script>
+        const common_nouns = [
+            "mbemba", "nthoo", "nguka", "kioko", "nthuku", "mbisu", "muti", "kimu", "kiti", "meza", "kitabu", "kalam",
+            "kavinda", "kiatu", "simu", "kisya", "mwango", "utha", "kiveti", "mathelevisheni", "mbembe", "kisaa", "mvunga",
+            "kiloni", "ngwata", "kofia", "kitanda", "mukeko", "ndeti", "kiwa", "ndule", "nzaa", "kinyanzi", "basi", "mutemi",
+            "ndege", "mbua", "kyeni", "mwei", "moon", "ngulungwa", "kisau", "mwii", "kivwii", "kyauni", "muu", "ithyulu",
+            "kisyo", "kisuka", "kikuu", "muthea", "kisyau", "thia", "kiveti", "luuni", "wingu", "mavinda", "utuku", "mwaki",
+            "kiwaka", "usiku", "mbesa", "mwatu", "mbai", "nthingu", "nthi", "kithome", "kalamu", "masomu", "kiungwana", 
+            "kiolo", "thi", "moi", "nzeo", "ukweli", "uongo", "kisomo", "kimwene", "kiambiti", "kithoko", "mathevo", "masaku",
+            "kyama", "musyi", "mbingi", "yulu", "kiuni", "mbemba", "mbemba", "ngai", "nyumba", "kiio", "mwendwa", "kwithya",
+            "kilovi", "trouble", "kivangi", "kithungu", "muthulu", "mavindilo", "ngoma", "matuki", "nduuka", "mbee", "nzau",
+            "nguluvu", "ngombe", "kiveki", "uthei", "kiwii", "mwaki", "miyai", "muthoniwa", "mbia", "wealth", "ngovo", "kaana",
+            "kitwii", "miiso", "kivuthu", "matheya", "makondi", "maviu", "legs", "meu", "masomeu", "steps", "ukivii", "patience",
+            "utethyo", "muunda", "kitho", "usukulu", "sugar", "ndimu", "matunda", "miwa", "sugarcane", "ukwati", "marriage",
+            "kinyu", "liver", "menda", "intestines", "kiambiti", "words", "kasomo", "studies", "wendo", "love", "ngululu",
+            "flood", "mathina", "problems", "kyeni", "brightness", "utheu", "white", "utheu", "cleanliness", "kisuma", "axe",
+            "mbanga", "knife", "ukamba", "gourd", "katimba", "net", "ndingu", "bottle", "nzavi", "mango", "mathakoni",
+            "vegetables", "mwaiki", "beans", "kyeni", "sunshine", "kyekoni", "freedom", "ukisyo", "wisdom", "maitu", "mother",
+            "aitu", "father", "ngunga", "hour", "nthuka", "cat", "kiwiu", "desire", "muthuku", "peace", "muthenya", "day",
+            "kiseo", "morning", "utuku", "night","kioko"
+        ];
+
+        const verbs = [
+            "kwenda","wamuka", "kuma", "kuthya", "kuamba", "kusema", "kumbika", "kwemba", "kuya", "kwika", "kuthoma", "kusyaa", "kuua",
+            "kuvoya", "kuthema", "kunya", "kulya", "kukalaa", "kwinga", "kumbonya", "kusoma", "kusyiwa", "kutwaa", "kuhika",
+            "kusomya", "kusinda", "kusikalya", "kunenga", "kusyoka", "kwasyuka", "kulilia", "kumbanua", "kwithya", "kuthukiia",
+            "kweeta", "kutangasa", "kutiia", "kuseuva", "kweva", "kuathika", "kusyia", "kukwata", "kusavya", "kusuvia", "kuthembea",
+            "kuikia", "kuvungula", "kuangia", "kukuma", "kwetela", "kutetema", "kusaa", "kulika", "kuambania", "kutegea", 
+            "kuthita", "kukanya", "kuloka", "kusomba", "kukwiva", "kuangika", "kusyaiya", "kuvalya", "kwithya", "kuthela",
+            "kulaa", "kuvuua", "kusika", "kumea", "kuseka", "kusuta", "kuthea", "kutia", "kukosa", "kutuma", "kulika", "kuvathukia",
+            "kwikithya", "kwikala", "kuumia", "kutongia", "kuasya", "kusyaa", "kuw'a", "kuanika", "kulinga", "kutusa", "kuvunga",
+            "kutandoka", "kusaswa", "kutana", "kwetana", "kutumika", "kusuvia", "kuitia", "kusuvia", "kuthembia", "kukangulia",
+            "kuvoya", "kusiea", "kusikilia", "kutukia", "kutetema", "kulenga", "kuutuma", "kutunda", "kusiuva", "kweea", "kwikithya",
+            "kutethya", "kuvathukya", "kuthoma"
+        ];
+
+        const pronouns = [
+            "mimi", "wewe", "yeye", "sisi", "ninyi", "wao", "mimi", "yetu", "wetu", "yeye", "kama", "mwo", "tuk"
+        ];
+
+        const stopwords = [
+            "na", "wa", "kama","ata", "ya", "yao", "hii", "pamoja", "kwa", "tumetoka", "hivyo", "mwenye", "mali", "la", "ma",
+            "li", "ni", "mwezi", "sehemu", "kama", "huko", "hawa", "aka", "wasanii", "ukubali", "nina"
+        ];
+
+        function analyzeText() {
+            const inputText = document.getElementById("inputText").value.trim();
+            const words = inputText.split(/\s+/);
+            let result = [];
+
+            words.forEach(word => {
+                const cleanWord = word.toLowerCase().replace(/[^a-zA-Z]/g, "");
+                if (common_nouns.includes(cleanWord)) {
+                    result.push([word, "Noun"]);
+                } else if (verbs.includes(cleanWord)) {
+                    result.push([word, "Verb"]);
+                } else if (pronouns.includes(cleanWord)) {
+                    result.push([word, "Pronoun"]);
+                } else if (stopwords.includes(cleanWord)) {
+                    result.push([word, "Stopword"]);
+                } else {
+                    result.push([word, "Unknown"]);
+                }
+            });
+
+            displayResult(result);
+        }
+
+        function displayResult(result) {
+            const resultTable = document.getElementById("resultTable");
+            const resultBody = document.getElementById("resultBody");
+
+            resultBody.innerHTML = "";
+            result.forEach(row => {
+                const tr = document.createElement("tr");
+                const tdWord = document.createElement("td");
+                const tdPOS = document.createElement("td");
+
+                tdWord.textContent = row[0];
+                tdPOS.textContent = row[1];
+
+                tr.appendChild(tdWord);
+                tr.appendChild(tdPOS);
+                resultBody.appendChild(tr);
+            });
+
+            resultTable.style.display = "table";
+        }
+    </script>
+</body>
+</html>
